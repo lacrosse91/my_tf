@@ -7,6 +7,17 @@ class Variable:
         """
         self.data = data
         self.grad = None
+        self.creator = None
+
+    def set_creator(self, func):
+        self.creator = func
+
+    def backward(self):
+        f = self.creator
+        if f is not None:
+            x = f.input
+            x.grad = f.backward(self.grad)
+            x.backward()
 
 
 class Function:
@@ -17,7 +28,9 @@ class Function:
         x = input.data # データを取り出す
         y = self.forward(x) #　計算を別のメソッドで行う
         output = Variable(y) # Variableに変換
+        output.set_creator(self)
         self.input = input
+        self.output = output
         return output
 
     def forward(self, x):
@@ -61,8 +74,8 @@ a = A(x)
 b = B(a)
 y = C(b)
 
+
+# 逆伝播
 y.grad = np.array(1.0)
-b.grad = C.backward(y.grad)
-a.grad = B.backward(b.grad)
-x.grad = A.backward(a.grad)
+y.backward()
 print(x.grad)
